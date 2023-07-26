@@ -19,7 +19,7 @@ from typing import (
     Optional,
     Set,
     Tuple,
-    Union,
+    Union, Callable,
 )
 from urllib.parse import urljoin, urlsplit
 
@@ -75,6 +75,7 @@ class Context(object):
         source: Optional[Any] = None,
         base: Optional[str] = None,
         version: Optional[float] = None,
+        remote_url_filter: Optional[Callable[[str], bool]] = None,
     ):
         self.version: float = version or 1.0
         self.language = None
@@ -91,6 +92,7 @@ class Context(object):
         self.parent: Optional[Context] = None
         self.propagate = True
         self._context_cache: Dict[str, Any] = {}
+        self.remote_url_filter = remote_url_filter
         if source:
             self.load(source)
 
@@ -458,6 +460,9 @@ class Context(object):
     ):
         # type error: Value of type variable "AnyStr" of "urljoin" cannot be "Optional[str]"
         source_url = urljoin(base, source)  # type: ignore[type-var]
+
+        if self.remote_url_filter and not self.remote_url_filter(source_url):
+            raise ValueError('Remote fetching of URL not allowed for ' + source_url)
 
         if source_url in referenced_contexts:
             raise RECURSIVE_CONTEXT_INCLUSION

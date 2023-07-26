@@ -35,7 +35,7 @@ Example usage::
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, Callable
 
 import rdflib.parser
 from rdflib.graph import ConjunctiveGraph, Graph
@@ -116,7 +116,8 @@ class JsonLDParser(rdflib.parser.Parser):
         else:
             conj_sink = sink
 
-        to_rdf(data, conj_sink, base, context_data, version, generalized_rdf)
+        to_rdf(data, conj_sink, base, context_data, version, generalized_rdf,
+               remote_context_url_filter=kwargs.get('remote_context_url_filter'))
 
 
 def to_rdf(
@@ -127,9 +128,11 @@ def to_rdf(
     version: Optional[float] = None,
     generalized_rdf: bool = False,
     allow_lists_of_lists: Optional[bool] = None,
+    remote_context_url_filter: Optional[Callable[[str], bool]] = None,
 ):
     # TODO: docstring w. args and return value
-    context = Context(base=base, version=version)
+    context = Context(base=base, version=version,
+                      remote_url_filter=remote_context_url_filter)
     if context_data:
         context.load(context_data)
     parser = Parser(
