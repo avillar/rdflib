@@ -35,7 +35,16 @@ from __future__ import annotations
 
 import secrets
 import warnings
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Union,
+)
 
 import rdflib.parser
 from rdflib.graph import ConjunctiveGraph, Graph
@@ -168,6 +177,7 @@ class JsonLDParser(rdflib.parser.Parser):
             version,
             bool(generalized_rdf),
             skolemize=skolemize,
+            remote_context_url_filter=kwargs.get("remote_context_url_filter"),
         )
 
 
@@ -186,9 +196,12 @@ def to_rdf(
     generalized_rdf: bool = False,
     allow_lists_of_lists: Optional[bool] = None,
     skolemize: bool = False,
+    remote_context_url_filter: Optional[Callable[[str], bool]] = None,
 ):
     # TODO: docstring w. args and return value
-    context = Context(base=base, version=version)
+    context = Context(
+        base=base, version=version, remote_url_filter=remote_context_url_filter
+    )
     if context_data:
         context.load(context_data)
     parser = Parser(
@@ -261,7 +274,10 @@ class Parser:
             if local_context:
                 context = context.subcontext(local_context)
             else:
-                context = Context(base=context.doc_base)
+                context = Context(
+                    base=context.doc_base,
+                    remote_url_filter=context.remote_url_filter,
+                )
 
         # type error: Incompatible types in assignment (expression has type "Optional[Context]", variable has type "Context")
         context = context.get_context_for_type(node)  # type: ignore[assignment]

@@ -9,6 +9,7 @@ from collections import namedtuple
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Collection,
     Dict,
     Generator,
@@ -76,6 +77,7 @@ class Context:
         source: _ContextSourceType = None,
         base: Optional[str] = None,
         version: Optional[float] = 1.1,
+        remote_url_filter: Optional[Callable[[str], bool]] = None,
     ):
         self.version: float = version or 1.1
         self.language = None
@@ -92,6 +94,7 @@ class Context:
         self.parent: Optional[Context] = None
         self.propagate = True
         self._context_cache: Dict[str, Any] = {}
+        self.remote_url_filter = remote_url_filter
         if source:
             self.load(source)
 
@@ -119,7 +122,7 @@ class Context:
         return parent._subcontext(source, propagate)  # type: ignore[union-attr]
 
     def _subcontext(self, source: Any, propagate: bool) -> Context:
-        ctx = Context(version=self.version)
+        ctx = Context(version=self.version, remote_url_filter=self.remote_url_filter)
         ctx.propagate = propagate
         ctx.parent = self
         ctx.language = self.language
@@ -467,6 +470,10 @@ class Context:
     ):
         # type error: Value of type variable "AnyStr" of "urljoin" cannot be "Optional[str]"
         source_url = urljoin(base, source)  # type: ignore[type-var]
+
+        # type error: Argument 1 has incompatible type "Optional[str]"; expected "str"
+        if self.remote_url_filter and not self.remote_url_filter(source_url):  # type: ignore[arg-type]
+            raise ValueError(f"Remote fetching of URL not allowed for {source_url}")
 
         if source_url in referenced_contexts:
             raise RECURSIVE_CONTEXT_INCLUSION
