@@ -289,6 +289,9 @@ class Parser:
             if nested_id is not None and len(nested_id) > 0:
                 id_val = nested_id
 
+        # bool is a subclass of int, but a boolean @id makes no sense
+        if isinstance(id_val, (int, float)) and not isinstance(id_val, bool):
+            id_val = str(id_val)
         if isinstance(id_val, str):
             subj = self._to_rdf_id(context, id_val)
         else:
