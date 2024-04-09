@@ -210,6 +210,8 @@ class Parser(object):
             if nested_id is not None and len(nested_id) > 0:
                 id_val = nested_id
 
+        if isinstance(id_val, (int, float, bool)):
+            id_val = str(id_val)
         if isinstance(id_val, str):
             subj = self._to_rdf_id(context, id_val)
         else:
